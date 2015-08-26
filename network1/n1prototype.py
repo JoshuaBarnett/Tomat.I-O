@@ -29,7 +29,7 @@ from random import randint
 import os
 from scipy import misc
 import glob
-
+from PIL import Image
 
 
 
@@ -38,22 +38,21 @@ positivepath = "data/tomatoGeneral/*.png" # due to glob mechanics, *.png must be
 negativepath = "data/nonTomatoGeneral/*.jpg"
 
 
-def resizetoInputArray(resArray,path): # takes in list to store it, as well as a path
+def preprocess_images(path):
+    '''
+    resizes and converts all images in files to rgb format and returns list containing pixel values for all images
+    :param path: dir where files are stored
+    :return: a list of arrays containing all pixels in the image in format ([r,g,b,...],[r,g,b,...],...)
+    '''
+
+    resArray = []
     abs_file_path = os.path.join(script_dir, path) # add subdirectory to our global path
-    files=glob.glob(abs_file_path) # use Glob to get a whole list of the images
+    files = glob.glob(abs_file_path) # use Glob to get a whole list of the images
     for item in files: 
-        im = misc.imread(item) # read it in
-        print(len(im))
-        imResize = misc.imresize(im,(50,50))   # resize it to 50x50
-        print(len(imResize))
-        imFlattened = imResize.flatten()       # flatten that shit
-        print(len(imFlattened))                # should be 7500, a lot are 10000?
-        # also, need to get rid of that weird encoding tuple stuff
-        # that tuple encoding stuff is causing a vectorspace error in the densedesignmatrix
-        # that tomatoidentifier stems from
-        resArray.append(imFlattened)
-    resized = np.vstack([array[:7500] for array in resArray])   # only [numbersweneed] remain
-    return resized
+        im = Image.open(item).resize((50, 50)).convert('RGB')    # read it in
+        resized = np.array([pixel for rgb in list(im.getdata()) for pixel in rgb])  # converts 2500 (r,g,b) into 7500
+        resArray.append(resized)
+    return resArray
 
 
 class TomatoIdentifier(DenseDesignMatrix):
@@ -61,13 +60,13 @@ class TomatoIdentifier(DenseDesignMatrix):
         X = []
         Y = []
         self.class_names = ['0', '1']
-        X = resizetoInputArray(X, positivepath)
+        X = preprocess_images(positivepath)
         temp = len(X)
         i = 0
         while i < temp:
             Y.append((1, 0))
             i += 1
-        # X += resizetoInputArray(X,negativepath)
+        # X += preprocess_images(negativepath)
         # temp2 = len(X)-temp
         # for i in temp2:
         #    Y.append((0,1))#need to fill the outputs, repeat (1,0) for size of positivepath, () for size of negative
@@ -95,7 +94,7 @@ while True:
     ann.monitor()
     if not trainer.continue_learning(ann):
         break
-'''
+
 inputs = np.array([[0, 0]])
 print ann.fprop(theano.shared(inputs, name='inputs')).eval()
 inputs = np.array([[0, 1]])
@@ -104,4 +103,3 @@ inputs = np.array([[1, 0]])
 print ann.fprop(theano.shared(inputs, name='inputs')).eval()
 inputs = np.array([[1, 1]])
 print ann.fprop(theano.shared(inputs, name='inputs')).eval()
-'''
