@@ -50,7 +50,7 @@ def preprocess_images(path):
     files = glob.glob(abs_file_path) # use Glob to get a whole list of the images
     for item in files: 
         im = Image.open(item).resize((50, 50)).convert('RGB')    # read it in
-        resized = np.array([pixel for rgb in list(im.getdata()) for pixel in rgb])  # converts 2500 (r,g,b) into 7500
+        resized = np.array([rgb for pixel in list(im.getdata()) for rgb in pixel])  # converts 2500 (r,g,b) into 7500
         resArray.append(resized)
     return resArray
 
