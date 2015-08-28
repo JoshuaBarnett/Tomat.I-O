@@ -36,6 +36,7 @@ from PIL import Image
 script_dir = os.path.dirname(__file__)
 positivepath = "data/tomatoGeneral/*.png" # due to glob mechanics, *.png must be added, filters to only png images
 negativepath = "data/nonTomatoGeneral/*.jpg"
+testpath = "data/testImages/*.png"
 
 
 def preprocess_images(path):
@@ -66,10 +67,10 @@ class TomatoIdentifier(DenseDesignMatrix):
         while i < temp:
             Y.append((1, 0))
             i += 1
-        # X += preprocess_images(negativepath)
-        # temp2 = len(X)-temp
-        # for i in temp2:
-        #    Y.append((0,1))#need to fill the outputs, repeat (1,0) for size of positivepath, () for size of negative
+        X += preprocess_images(negativepath)
+        temp2 = len(X)-temp
+        for i in range(temp2):
+            Y.append((0,1))#need to fill the outputs, repeat (1,0) for size of positivepath, () for size of negative
         X = np.array(X)
         Y = np.array(Y)
         super(TomatoIdentifier, self).__init__(X=X, y=Y)
@@ -78,11 +79,11 @@ class TomatoIdentifier(DenseDesignMatrix):
 ds = TomatoIdentifier()
 # create hidden layer with 50 nodes, init weights in range -0.1 to 0.1 and add
 # a bias with value 1
-hidden_layer = mlp.Sigmoid(layer_name='hidden', dim=50, irange=.1, init_bias=1.)
+hidden_layer = mlp.Sigmoid(layer_name='hidden', dim=80, irange=.2, init_bias=1.)
 # create Softmax output layer
 output_layer = mlp.Softmax(2, 'output', irange=.1)
 # create Stochastic Gradient Descent trainer that runs for 500 epochs
-trainer = sgd.SGD(learning_rate=.05, batch_size=10, termination_criterion=EpochCounter(500))
+trainer = sgd.SGD(learning_rate=.05, batch_size=10, termination_criterion=EpochCounter(100))
 layers = [hidden_layer, output_layer]
 # create neural net that takes two inputs
 ann = mlp.MLP(layers, nvis=7500)
@@ -95,11 +96,16 @@ while True:
     if not trainer.continue_learning(ann):
         break
 
-inputs = np.array([[0, 0]])
+#add and process test images    
+TestImages = []
+TestImages = preprocess_images(testpath)
+
+#test them
+inputs = np.array(TestImages)
 print ann.fprop(theano.shared(inputs, name='inputs')).eval()
-inputs = np.array([[0, 1]])
-print ann.fprop(theano.shared(inputs, name='inputs')).eval()
-inputs = np.array([[1, 0]])
-print ann.fprop(theano.shared(inputs, name='inputs')).eval()
-inputs = np.array([[1, 1]])
-print ann.fprop(theano.shared(inputs, name='inputs')).eval()
+#inputs = TestImages[1]
+#print ann.fprop(theano.shared(inputs, name='inputs')).eval()
+#inputs = TestImages[2]
+#print ann.fprop(theano.shared(inputs, name='inputs')).eval()
+#inputs = TestImages[3]
+#print ann.fprop(theano.shared(inputs, name='inputs')).eval()
