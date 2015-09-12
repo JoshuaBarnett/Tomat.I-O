@@ -43,10 +43,10 @@ def testCV(image_list):
     cropped_images = {}
 
     for image in image_list:
-        img = cv2.imread(image,0) # read in image
+        img = cv2.imread(image,1) # read in image
         img2 = cv2.medianBlur(img,5) #duplicate and blur
         img2 = cv2.Canny(img2,.9,.6,3) #canny edge detect on blurred
-        cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR) #not sure
+        #cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR) #not sure
         circles = cv2.HoughCircles(img2,cv.CV_HOUGH_GRADIENT,1,20,
 		                            param1=100,param2=50,minRadius=10,maxRadius=75) #find circcles in detected edge img (play with params to improve performance)
         circles = np.uint16(np.around(circles)) #make nparray of [[xcent,ycent,radius]]
@@ -55,22 +55,24 @@ def testCV(image_list):
 		small, it will find circles in everything, also high resolution images
 		take forever, may want to scale them down first param1 and 2 seem to have sig. effect on results
         '''
-    cropped_images['cropped_' + image] = cimg #?
-   ''' #maybe split function here?'''
+    cropped_images['cropped_' + image] = img2 #?
+    ''' #maybe split function here?'''
     os.chdir('../croppedImages') #switch to cropped directory
     croppedImgPadSize = 30 #HOW MUCH PIXEL PADDING AROUND CIRCLE WHEN CROPPED
+    xx = 0
     for i in circles[0,:]:#for each circle found
+        xx += 1
         print str(i[0]) + " " + str(i[1]) + " " + str(i[2]) #print circle info
         cv2.imwrite(str(xx)+".png",img[i[0]-i[2]-croppedImgPadSize:i[2]+i[0]+croppedImgPadSize,i[1]-i[2]-croppedImgPadSize:i[1]+i[2]+croppedImgPadSize]) #write img of circle contents w/ pad
         if i[2] > 100:#?
 # draw the outer circle
-            cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
+            cv2.circle(img2,(i[0],i[1]),i[2],(0,255,0),2)
 # draw the center of the circle
-            cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
+            cv2.circle(img2,(i[0],i[1]),2,(0,0,255),3)
 
 
     #for image in cropped_images:
-    #    cv2.imwrite(image, cimg)
+    #    cv2.imwrite(image, img2)
 
     return cropped_images.keys() #?
 
